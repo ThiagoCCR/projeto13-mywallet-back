@@ -4,6 +4,7 @@ import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import joi from "joi";
 import { v4 as uuid } from "uuid";
+import dayjs from "dayjs";
 import bcrypt from "bcrypt";
 
 dotenv.config();
@@ -89,6 +90,40 @@ app.post("/sign-in", async (req, res) => {
   }
 });
 
+app.get("/logs", async (req, res) => {
+  const authorization = req.headers.authorization;
+  const token = authorization?.replace("Bearer ", "");
+
+  if (!token) return res.status(401).send("Acesso não autorizado");
+
+  try {
+    const session = await db.collection("sessions").findOne({ token });
+
+    if (!session) return res.status(409).send("Sessão não encontrada");
+
+    const user = await db.collection("users").findOne({
+      _id: session.userId,
+    });
+
+    if (!user) return res.status(404).send("Usuário não encontrado");
+
+    const logs = await db
+      .collection("logs")
+      .find({ name: user.name })
+      .toArray();
+
+    res.status(200).send(logs);
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+
+});
+
+//postar logs COM DATA
+
 app.listen(5000, () => {
   console.log("Listening on Port 5000");
 });
+
+db.logs.find({ name: "Thiago" }).toArray().pretty();
