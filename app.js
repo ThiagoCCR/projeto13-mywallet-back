@@ -16,7 +16,7 @@ app.use(cors());
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 let db;
 mongoClient.connect().then(() => {
-  db = mongoClient.db("buzzquizz");
+  db = mongoClient.db("MyWallet_API");
 });
 
 //joi
@@ -42,7 +42,7 @@ app.post("/cadastro", async (req, res) => {
   }
 
   try {
-    const registeredName = await db.collection("users").findOne({ user: user });
+    const registeredName = await db.collection("users").findOne({ name: name });
     const registeredEmail = await db
       .collection("users")
       .findOne({ email: email });
@@ -65,6 +65,9 @@ app.post("/cadastro", async (req, res) => {
     res.sendStatus(500);
   }
 });
+
+app.post("/cadastro", async (req, res) => {});
+
 
 app.listen(5000, () => {
   console.log("Listening on Port 5000");
