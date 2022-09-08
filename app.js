@@ -26,7 +26,7 @@ const userSchema = joi.object({
   password: joi.string().required(),
 });
 
-app.post("/cadastro", async (req, res) => {
+app.post("/sign-up", async (req, res) => {
   const { name, email, password } = req.body;
   const hashPassword = bcrypt.hashSync(password, 10);
   const user = { name, email, password: hashPassword };
@@ -62,12 +62,32 @@ app.post("/cadastro", async (req, res) => {
 
     res.status(201).send("Usuário Cadastrado com sucesso!");
   } catch (error) {
+    console.log(error);
     res.sendStatus(500);
   }
 });
 
-app.post("/cadastro", async (req, res) => {});
+app.post("/sign-in", async (req, res) => {
+  const { email, password } = req.body;
 
+  try {
+    const user = await db.collection("users").findOne({ email: email });
+
+    if (user && bcrypt.compareSync(password, user.password)) {
+      const token = uuid();
+      await db.collection("sessions").insertOne({
+        userId: user._id,
+        token,
+      });
+      res.status(200).send(token);
+    } else {
+      return res.status(404).send("Senha ou e-mail incorretos");
+    }
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
 
 app.listen(5000, () => {
   console.log("Listening on Port 5000");
