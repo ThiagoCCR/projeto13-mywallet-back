@@ -27,6 +27,13 @@ const userSchema = joi.object({
   password: joi.string().required(),
 });
 
+const logSchema = joi.object({
+  description: joi.string().required().trim(),
+  user: joi.string().required().trim(),
+  value: joi.number().greater(0),
+  date: joi.string().required(),
+});
+
 app.post("/sign-up", async (req, res) => {
   const { name, email, password } = req.body;
   const hashPassword = bcrypt.hashSync(password, 10);
@@ -80,7 +87,8 @@ app.post("/sign-in", async (req, res) => {
         userId: user._id,
         token,
       });
-      res.status(200).send(token);
+      const delivery = { token, name: user.name };
+      res.status(200).send(delivery);
     } else {
       return res.status(404).send("Senha ou e-mail incorretos");
     }
@@ -107,23 +115,63 @@ app.get("/logs", async (req, res) => {
 
     if (!user) return res.status(404).send("Usuário não encontrado");
 
+    console.log(user)
+
     const logs = await db
       .collection("logs")
-      .find({ name: user.name })
+      .find({ user: user.name })
       .toArray();
+
+    console.log(logs)
 
     res.status(200).send(logs);
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
   }
-
 });
 
-//postar logs COM DATA
+app.post("/logs", async (req, res) => {
+  const authorization = req.headers.authorization;
+  const token = authorization?.replace("Bearer ", "");
+  const { description, value } = req.body;
+
+  if (!token) return res.status(401).send("Acesso não autorizado");
+
+  try {
+    const session = await db.collection("sessions").findOne({ token });
+    if (!session) return res.status(409).send("Sessão não encontrada");
+
+    const user = await db.collection("users").findOne({
+      _id: session.userId,
+    });
+    if (!user) return res.status(404).send("Usuário não encontrado");
+
+    const newLog = {
+      description,
+      value,
+      user: user.name,
+      date: dayjs().format("DD/MM"),
+    };
+    const validation = logSchema.validate(newLog, {
+      abortEarly: false,
+    });
+
+    if (validation.error) {
+      return res
+        .status(422)
+        .send(validation.error.details.map((res) => res.message));
+    }
+
+    await db.collection("logs").insertOne(newLog);
+
+    res.status(201).send(newLog);
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
 
 app.listen(5000, () => {
   console.log("Listening on Port 5000");
 });
-
-db.logs.find({ name: "Thiago" }).toArray().pretty();
