@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import dayjs from "dayjs";
 
 const userSchema = joi.object({
-  name: joi.string().required().trim(),
+  name: joi.string().required().max(10).trim(),
   email: joi.string().email().required().trim(),
   password: joi.string().required(),
 });
