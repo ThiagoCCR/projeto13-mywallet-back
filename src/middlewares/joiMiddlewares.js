@@ -36,11 +36,12 @@ async function validateUserSchema(req, res, next) {
 }
 
 async function validateLogSchema(req, res, next) {
-  const username = res.locals.user;
+  const { description, value, type } = req.body;
+  const user = res.locals.user;
   const newLog = {
     description,
     value,
-    user: username,
+    user: user.name,
     type,
     date: dayjs().format("DD/MM"),
   };
