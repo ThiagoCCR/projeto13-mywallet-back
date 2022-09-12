@@ -1,4 +1,4 @@
-import mongo from "../db/db";
+import mongo from "../db/db.js";
 
 async function hasUser(req, res, next) {
   const authorization = req.headers.authorization;
